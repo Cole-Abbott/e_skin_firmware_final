@@ -1,5 +1,5 @@
 # E-Skin Firmware
-# ==========================
+==========================
 
 This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ EF microcontroller to acquire high-speed ADC data and transmit it over USB.
 
