@@ -1,5 +1,5 @@
 # E-Skin Firmware
-==========================
+---
 
 This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ EF microcontroller to acquire high-speed ADC data and transmit it over USB.
 
@@ -24,6 +24,7 @@ This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ
 2. **Open in MPLAB X IDE**
     - Import the project into MPLAB X IDE.
     - Ensure you have the correct compiler and device family selected.
+    - The project was developed using MPLAB X IDE v6.20, so it is recommended to use this version or later.
 
 3. **Build and Flash**
     - Connect your PIC32 MZ EF board.
