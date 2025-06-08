@@ -18,7 +18,7 @@ This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ
 
 1. **Clone the Repository**
     ```sh
-    git clone https://github.com/yourusername/e_skin_firmware_final.git
+    git clone https://github.com/Cole-Abbott/e_skin_firmware_final.git
     ```
 
 2. **Open in MPLAB X IDE**
@@ -33,6 +33,8 @@ This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ
 4. **Connect via USB**
     - The device will enumerate as a USB device.
     - Use the python scrips provieded in the `/pyusb_code` directory to read and visualize the data.
+    - Note: You may need to install the `pyusb` library for Python, as well as set the path to the libusb in the python scripts.
+    - The usb_plot script alse requires `pyqtgraph` for visualization.
 
 ## Data Format
 
@@ -48,6 +50,13 @@ The first 2 bytes of each packet are the packet header, which contain the channe
 /README.md                  # Project overview
 /DOCS.md                    # Documentation for the firmware
 ```
+
+## Resources
+- [PIC32 MZ EF Family Reference Manual](https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/DataSheets/PIC32MZ-Embedded-Connectivity-with-Floating-Point-Unit-Family-Data-Sheet-DS60001320H.pdf)
+- [Curiosity PIC32MZ EF 2.0 Development Board User's Guide](https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/UserGuides/PIC32MZ-EF-2.0-Development-Board-Users-Guide-DS70005400.pdf)
+- [High Speed ADC Sampling Application Note](https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ApplicationNotes/ApplicationNotes/Worlds-Fastest-Embedded-Interleaved-12-bit-ADC-Using-PIC32MZ-and-PIC32MK-Families-DS00002785A.pdf)
+- [Older but simple PIC32MZ EF Setup video in Harmony](https://www.youtube.com/watch?v=sW-yS2FHI54)
+- [Recent Ish Youtube Tutorial on PIC2 MZ EF Setup in Harmony](https://www.youtube.com/watch?v=Z-8srAI8jow)
 
 
 ## Authors
