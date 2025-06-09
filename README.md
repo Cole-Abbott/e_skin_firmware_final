@@ -36,6 +36,13 @@ This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ
     - Note: You may need to install the `pyusb` library for Python, as well as set the path to the libusb in the python scripts.
     - The usb_plot script alse requires `pyqtgraph` for visualization.
 
+5. **Build Circuit**
+    - For the PIC32 MZ EF curiosity 2.0 board, you can use the following connections:
+        - ADC Channel 2: Pin RB2 (AN2), on the Xplained Pro Extension Standard Header, pin 3. (top row, second from the top when the board is oriented with the USB port on the left)
+        - ADC Channel 4: Pin RB4 (AN4), on the Arduino Extension Standard Header, pin A0
+        - Trigger Signal: Pin RA1, on the Arduino Extension Standard Header, pin A1
+        - Ground: Various ground pins, such as Xplained Pro Extension Standard Header, pin 2, (bottom row top pin)
+
 ## Data Format
 
 Data is sent as binary packets, containing 766 data samples, each sample being 2 bytes (16 bits). The data is interleaved from the two ADC channels.
