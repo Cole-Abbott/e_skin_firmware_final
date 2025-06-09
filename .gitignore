@@ -1,0 +1,17 @@
+e_skin_firmware_final.X/.generated_files
+e_skin_firmware_final.X/build
+e_skin_firmware_final.X/debug
+e_skin_firmware_final.X/dist
+e_skin_firmware_final.X/queuelogs
+e_skin_firmware_final.X/defmplabxtrace.log
+e_skin_firmware_final.X/defmplabxtrace.log.inx
+
+
+e_skin_firmware_final.X/nbproject/private
+e_skin_firmware_final.X/nbproject/Makefile-genesis.properties
+e_skin_firmware_final.X/nbproject/Makefile-local-pic32mz_ef_curiosity_2_0.mk
+e_skin_firmware_final.X/nbproject/Makefile-impl.mk
+e_skin_firmware_final.X/nbproject/Makefile-variables.mk
+e_skin_firmware_final.X/nbproject/Makefile-pic32mz_ef_curiosity_2_0.mk
+
+.DS_Store
