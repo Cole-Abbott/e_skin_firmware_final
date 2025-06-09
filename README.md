@@ -39,7 +39,7 @@ This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ
 ## Data Format
 
 Data is sent as binary packets, containing 766 data samples, each sample being 2 bytes (16 bits). The data is interleaved from the two ADC channels.
-The first 2 bytes of each packet are the packet header, which contain the channel number 1-32.
+The first 2 bytes of each packet are the packet header, which can contain metadata such as the channel number, but this has not yet been implemented in the firmware. The remaining 1532 bytes contain the ADC samples.
 
 ## Directory Structure
 
