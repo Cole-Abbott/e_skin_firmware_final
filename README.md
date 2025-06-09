@@ -27,10 +27,11 @@ This project implements firmware for the **E-Skin** system, utilizing a PIC32 MZ
     - The project was developed using MPLAB X IDE v6.20, so it is recommended to use this version or later.
 
 3. **Build and Flash**
-    - Connect your PIC32 MZ EF board.
+    - Connect your PIC32 MZ EF board to your computer via USB with the Debug USB port.
     - Build the project and flash the firmware.
 
 4. **Connect via USB**
+    - Connect your PIC32 MZ EF board to your computer via USB with the Target USB port.
     - The device will enumerate as a USB device.
     - Use the python scrips provieded in the `/pyusb_code` directory to read and visualize the data.
     - Note: You may need to install the `pyusb` library for Python, as well as set the path to the libusb in the python scripts.
