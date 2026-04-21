@@ -8,14 +8,16 @@ import usb.backend.libusb1
 ADC_SAMPLES = 766
 ADC_PERIOD = 0.16  # [us]
 
+
 def init_usb_device():
-    path_to_libusb = '/opt/homebrew/opt/libusb/lib/libusb-1.0.dylib'
+    path_to_libusb = "/opt/homebrew/opt/libusb/lib/libusb-1.0.dylib"
     backend = usb.backend.libusb1.get_backend(find_library=lambda x: path_to_libusb)
-    dev = usb.core.find(idVendor=0x04d8, idProduct=0x0053, backend=backend)
+    dev = usb.core.find(idVendor=0x04D8, idProduct=0x0053, backend=backend)
     if dev is None:
-        raise ValueError('Device not found')
+        raise ValueError("Device not found")
     dev.set_configuration()
     return dev
+
 
 def read_usb_data(dev):
     try:
@@ -28,11 +30,14 @@ def read_usb_data(dev):
         else:
             raise
     adc_data = np.zeros(ADC_SAMPLES)
+    id = data[1]
+    int_id = data[0]
     for i in range(ADC_SAMPLES):
         adc_data[i] = data[i * 2 + 2] + (data[i * 2 + 3] << 8)
-    return adc_data
+    return adc_data, id, int_id
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(f"Usage: {sys.argv[0]} output.csv num_iterations")
         sys.exit(1)
@@ -45,17 +50,19 @@ if __name__ == '__main__':
     all_data = []
     for i in range(num_iterations):
         try:
-            adc_data = read_usb_data(dev)
+            adc_data, id, int_id = read_usb_data(dev)
             all_data.append(adc_data.astype(int))
-            print(f"Saved iteration {i+1}/{num_iterations}")
+            print(
+                f"Saved iteration {i + 1}/{num_iterations}(ID:  {id}), (int_ID: {int_id})"
+            )
         except Exception as e:
-            print(f"Error on iteration {i+1}: {e}")
+            print(f"Error on iteration {i + 1}: {e}")
             break
 
     # Transpose so each column is one iteration
     all_data = np.array(all_data).T  # Shape: (ADC_SAMPLES, num_iterations)
 
-    with open(output_file, 'w', newline='') as csvfile:
+    with open(output_file, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         # Write header: iteration_0, iteration_1, ...
         header = [f"iteration_{i}" for i in range(all_data.shape[1])]

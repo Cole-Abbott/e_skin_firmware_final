@@ -10,9 +10,9 @@ import usb.backend.libusb1
 import time
 
 last_ID = 0
-# ADC_SAMPLES = 766
-ADC_SAMPLES = 1000
-DATA_LEN = 2048  # 1536 for dev board
+ADC_SAMPLES = 766
+# ADC_SAMPLES = 1000
+DATA_LEN = 1536  # 1536 for dev board
 ADC_PERIOD = 0.16  # [us]
 
 channels = 33
@@ -24,8 +24,8 @@ def init_usb_device():
     path_to_libusb = "/opt/homebrew/opt/libusb/lib/libusb-1.0.dylib"
     backend = usb.backend.libusb1.get_backend(find_library=lambda x: path_to_libusb)
 
-    dev = usb.core.find(idVendor=0x04D8, idProduct=0x0054, backend=backend)  # Dev Board
-    # dev = usb.core.find(idVendor=0x04D8, idProduct=0x0053, backend=backend)  # PCB
+    # dev = usb.core.find(idVendor=0x04D8, idProduct=0x0054, backend=backend)  # Dev Board
+    dev = usb.core.find(idVendor=0x04D8, idProduct=0x0053, backend=backend)  # PCB
 
     if dev is None:
         raise ValueError("Device not found")
