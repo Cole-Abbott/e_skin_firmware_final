@@ -35,7 +35,9 @@ NUM_STREAMS = 6
 
 
 def init_usb_device(config: USBConfig = DEFAULT_USB_CONFIG):
-    backend = usb.backend.libusb1.get_backend(find_library=lambda _x: config.libusb_path)
+    backend = usb.backend.libusb1.get_backend(
+        find_library=lambda _x: config.libusb_path
+    )
     dev = usb.core.find(
         idVendor=config.vendor_id,
         idProduct=config.product_id,
@@ -48,7 +50,9 @@ def init_usb_device(config: USBConfig = DEFAULT_USB_CONFIG):
     return dev
 
 
-def read_usb_data(dev, config: USBConfig = DEFAULT_USB_CONFIG) -> tuple[np.ndarray, int]:
+def read_usb_data(
+    dev, config: USBConfig = DEFAULT_USB_CONFIG
+) -> tuple[np.ndarray, int]:
     try:
         data = dev.read(config.endpoint, config.data_len, timeout=10)
     except usb.core.USBError as err:
@@ -94,7 +98,8 @@ class SixStreamPlotWindow(QMainWindow):
             self.config.adc_period_us,
         )
         self.stream_data = [
-            np.zeros(self.config.adc_samples, dtype=np.float64) for _ in range(self.num_streams)
+            np.zeros(self.config.adc_samples, dtype=np.float64)
+            for _ in range(self.num_streams)
         ]
         self.calibration_data: list[Optional[np.ndarray]] = [None] * self.num_streams
         self.calibration_pending: set[int] = set()
@@ -171,25 +176,15 @@ class SixStreamPlotWindow(QMainWindow):
         self.calibration_data = [None] * self.num_streams
         self.calibration_pending = set(range(self.num_streams))
         self.calibration_active = False
-        self.status_label.setText("Calibration started: waiting for one sample from each stream...")
+        self.status_label.setText(
+            "Calibration started: waiting for one sample from each stream..."
+        )
 
     def clear_calibration(self):
         self.calibration_data = [None] * self.num_streams
         self.calibration_pending.clear()
         self.calibration_active = False
         self.status_label.setText("Calibration cleared.")
-
-    def packet_to_stream(self, packet_id: int) -> int:
-        if self.last_packet_id is None:
-            self.packet_steps = 0
-            return 0
-
-        delta = (packet_id - self.last_packet_id) & 0xFF
-        if delta > 1:
-            self.missed_packets += delta - 1
-
-        self.packet_steps += delta
-        return self.packet_steps % self.num_streams
 
     def _maybe_capture_calibration(self, stream_idx: int):
         if stream_idx in self.calibration_pending:
@@ -218,8 +213,7 @@ class SixStreamPlotWindow(QMainWindow):
 
         try:
             adc_data, packet_id = read_usb_data(self.dev, self.config)
-            stream_idx = self.packet_to_stream(packet_id)
-            self.last_packet_id = packet_id
+            stream_idx = packet_id
             self.stream_data[stream_idx] = adc_data
 
             self._maybe_capture_calibration(stream_idx)
@@ -227,10 +221,8 @@ class SixStreamPlotWindow(QMainWindow):
             plot_trace = self._get_plot_trace(stream_idx)
             self.curves[stream_idx].setData(self.x, plot_trace)
 
-            next_stream = ((stream_idx + 1) % self.num_streams) + 1
             self.status_label.setText(
                 f"Packet {packet_id} -> Stream {stream_idx + 1} | "
-                f"Next: {next_stream} | Missed: {self.missed_packets} | Steps: {self.packet_steps}"
                 f"{self._calibration_status_text()}"
             )
             self.timer.setInterval(0)
@@ -269,4 +261,3 @@ def run_usb_stream_plot(
     )
     window.show()
     sys.exit(app.exec_())
-
