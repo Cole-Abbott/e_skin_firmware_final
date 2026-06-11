@@ -72,9 +72,11 @@
 
 #define ADC_VREF                (3.3f)
 #define ADC_MAX_COUNT           (4095)
-#define SAMPLE_LEN 500 // samples per channel, 2 channels = actually 766 samples
+#define SAMPLE_LEN 383 // samples per channel, 2 channels = actually 766 samples
 #define ADC_SRC_ADDR_2 (const void *)((&ADCDATA0) + ADCHS_CH2)
 #define ADC_SRC_SIZE 3*sizeof(uint32_t) // *3 to capture ADCDATA2-ADCDATA4 in 1 transfer
+
+uint8_t interrupt_counter = 0;
 
 
 // *****************************************************************************
@@ -98,7 +100,7 @@ APP_DATA appData;
 uint8_t receivedDataBuffer[512] CACHE_ALIGN;
 
 /* Transmit data buffer */
-uint8_t transmitDataBuffer[2048] CACHE_ALIGN;
+uint8_t transmitDataBuffer[1536] CACHE_ALIGN;
 
 __COHERENT uint32_t adc_buf[SAMPLE_LEN * 3];
 
@@ -120,7 +122,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
         case USB_DEVICE_EVENT_DECONFIGURED:
 
             /* Device is reset or deconfigured. Provide LED indication.*/
-            LED_Off();
+            LED_0_Clear();
 
             appData.deviceIsConfigured = false;
 
@@ -132,7 +134,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
             configurationValue = (uint8_t *) eventData;
             if (*configurationValue == 1) {
                 /* The device is in configured state. Update LED indication */
-                LED_On();
+                LED_0_Set();
 
                 /* Reset endpoint data send & receive flag  */
                 appData.deviceIsConfigured = true;
@@ -141,7 +143,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
 
         case USB_DEVICE_EVENT_SUSPENDED:
 
-            LED_Off();
+            LED_0_Clear();
             /* Device is suspended. */
             break;
 
@@ -156,7 +158,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
 
             /* VBUS is removed. Detach the device */
             USB_DEVICE_Detach(appData.usbDevHandle);
-            LED_Off();
+            LED_0_Clear();
             break;
 
         case USB_DEVICE_EVENT_CONTROL_TRANSFER_SETUP_REQUEST:
@@ -186,14 +188,14 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
         case USB_DEVICE_EVENT_ENDPOINT_WRITE_COMPLETE:
             /* Endpoint write is complete */
             appData.epDataWritePending = false;
-            DMAC_ChannelTransfer(DMAC_CHANNEL_0, ADC_SRC_ADDR_2, ADC_SRC_SIZE, adc_buf, sizeof (adc_buf), sizeof (uint32_t)); // start a new DMA transfer
+            //DMAC_ChannelTransfer(DMAC_CHANNEL_0, ADC_SRC_ADDR_2, ADC_SRC_SIZE, adc_buf, sizeof (adc_buf), sizeof (uint32_t)); // start a new DMA transfer
 
             break;
 
             /* These events are not used in this demo. */
         case USB_DEVICE_EVENT_RESUMED:
             if (appData.deviceIsConfigured == true) {
-                LED_On();
+                LED_0_Set();
             }
             break;
         case USB_DEVICE_EVENT_ERROR:
@@ -204,12 +206,20 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
 
 static void ADC_2_ResultReadyCallback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle) {
     appData.adcDataReady = true;
+    
 }
 
 void trigger_callback(GPIO_PIN pin, uintptr_t context) {
-    if (TRIGGER_Get() == 1) {
+    if (TRIGGER_2_Get() == 1) {
         //rising edge
-    } else if (TRIGGER_Get() == 0) {
+    } else if (TRIGGER_2_Get() == 0) {
+        interrupt_counter++;
+//        if (interrupt_counter > 5){
+//            interrupt_counter = 0;
+//        }
+        if (FULL_Get() == 1) {
+            interrupt_counter = 0;
+        }
         DMAC_ChannelTransfer(DMAC_CHANNEL_0, ADC_SRC_ADDR_2, ADC_SRC_SIZE, adc_buf, sizeof (adc_buf), sizeof (uint32_t));
     }
 }
@@ -238,6 +248,7 @@ void trigger_callback(GPIO_PIN pin, uintptr_t context) {
     See prototype in app.h.
  */
 
+
 void APP_Initialize(void) {
     /* Place the App state machine in its initial state. */
     appData.state = APP_STATE_INIT;
@@ -258,8 +269,8 @@ void APP_Initialize(void) {
     DMAC_ChannelTransfer(DMAC_CHANNEL_0, ADC_SRC_ADDR_2, ADC_SRC_SIZE, adc_buf, sizeof (adc_buf), sizeof (uint32_t));
 
     //setup trigger interupt
-    GPIO_PinInterruptCallbackRegister(TRIGGER_PIN, trigger_callback, (uintptr_t) NULL);
-    GPIO_PinIntEnable(TRIGGER_PIN, GPIO_INTERRUPT_ON_BOTH_EDGES);
+    GPIO_PinInterruptCallbackRegister(TRIGGER_2_PIN, trigger_callback, (uintptr_t) NULL);
+    GPIO_PinIntEnable(TRIGGER_2_PIN, GPIO_INTERRUPT_ON_BOTH_EDGES);
 
     TMR3_Start(); //turn on Timer 3 to trigger ADC_2
     OCMP3_Enable(); // turn on OCMP3 to trigger ADC_4
@@ -274,6 +285,8 @@ void APP_Initialize(void) {
  */
 
 void APP_Tasks(void) {
+    
+    
     switch (appData.state) {
         case APP_STATE_INIT:
             /* Open the device layer */
@@ -324,7 +337,7 @@ void APP_Tasks(void) {
             break;
 
         case APP_STATE_MAIN_TASK:
-
+            
             //check if we are still configured
             if (!appData.deviceIsConfigured) {
                 /* This means the device got deconfigured. Change the
@@ -349,13 +362,10 @@ void APP_Tasks(void) {
                     static uint8_t counter = 0;
 
                     //Channel ID
-                    transmitDataBuffer[0] = 0x00;
+                    transmitDataBuffer[0] = interrupt_counter;
 
                     //packet ID 
                     transmitDataBuffer[1] = counter++;
-                    if (counter > (33 - 1)) {
-                        counter = 0;
-                    } 
 
                     // copy ADC data into tx buf
                     for (int i = 0; i < SAMPLE_LEN; i++) {
@@ -400,4 +410,3 @@ void APP_Tasks(void) {
 /*******************************************************************************
  End of File
  */
-
