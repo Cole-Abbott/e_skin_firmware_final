@@ -574,7 +574,8 @@ files:
   type: LINKER
   userChecksum: 07A482DAB7473FC475EA656561967B15
 format_version: v1.0
-libraries: []
+libraries: [
+  ]
 settings:
 - append: true
   category: C32
@@ -618,4 +619,5 @@ settings:
   key: generate-micro-compressed-code
   security: NON_SECURE
   value: 'false'
-sourcePaths: []
+sourcePaths: [
+  ]

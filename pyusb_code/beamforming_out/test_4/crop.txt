@@ -1,0 +1,4 @@
+python3 beamform_das.py real --csv data_3-9/test_4.csv --capture-indices 3,4,5,6,7,8 --empty-std-frac 0.35 --crop-samples 600 --crop-threshold 80 --crop-offset 100 
+
+
+python3 beamform_das.py real --csv data_3-9/test_4.csv --capture-indices 43,44,45,46,47,48 --empty-std-frac 0.35 --crop-samples 600 --crop-threshold 80 --crop-offset 100 

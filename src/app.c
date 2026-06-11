@@ -72,7 +72,7 @@
 
 #define ADC_VREF                (3.3f)
 #define ADC_MAX_COUNT           (4095)
-#define SAMPLE_LEN 383 // samples per channel, 2 channels = actually 766 samples
+#define SAMPLE_LEN 500 // samples per channel, 2 channels = actually 766 samples
 #define ADC_SRC_ADDR_2 (const void *)((&ADCDATA0) + ADCHS_CH2)
 #define ADC_SRC_SIZE 3*sizeof(uint32_t) // *3 to capture ADCDATA2-ADCDATA4 in 1 transfer
 
@@ -98,7 +98,7 @@ APP_DATA appData;
 uint8_t receivedDataBuffer[512] CACHE_ALIGN;
 
 /* Transmit data buffer */
-uint8_t transmitDataBuffer[1536] CACHE_ALIGN;
+uint8_t transmitDataBuffer[2048] CACHE_ALIGN;
 
 __COHERENT uint32_t adc_buf[SAMPLE_LEN * 3];
 
@@ -186,6 +186,8 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
         case USB_DEVICE_EVENT_ENDPOINT_WRITE_COMPLETE:
             /* Endpoint write is complete */
             appData.epDataWritePending = false;
+            DMAC_ChannelTransfer(DMAC_CHANNEL_0, ADC_SRC_ADDR_2, ADC_SRC_SIZE, adc_buf, sizeof (adc_buf), sizeof (uint32_t)); // start a new DMA transfer
+
             break;
 
             /* These events are not used in this demo. */
@@ -351,6 +353,9 @@ void APP_Tasks(void) {
 
                     //packet ID 
                     transmitDataBuffer[1] = counter++;
+                    if (counter > (33 - 1)) {
+                        counter = 0;
+                    } 
 
                     // copy ADC data into tx buf
                     for (int i = 0; i < SAMPLE_LEN; i++) {

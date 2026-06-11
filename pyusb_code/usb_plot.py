@@ -10,31 +10,38 @@ import usb.backend.libusb1
 import time
 
 last_ID = 0
-ADC_SAMPLES = 766
-ADC_PERIOD = 0.16 # [us]
+# ADC_SAMPLES = 766
+ADC_SAMPLES = 1000
+DATA_LEN = 2048  # 1536 for dev board
+ADC_PERIOD = 0.16  # [us]
+
+channels = 33
+offset = 0
 
 
 def init_usb_device():
     # Adjust path to libusb as needed
-    path_to_libusb = '/opt/homebrew/opt/libusb/lib/libusb-1.0.dylib'
+    path_to_libusb = "/opt/homebrew/opt/libusb/lib/libusb-1.0.dylib"
     backend = usb.backend.libusb1.get_backend(find_library=lambda x: path_to_libusb)
 
-    dev = usb.core.find(idVendor=0x04d8, idProduct=0x0053, backend=backend)
+    dev = usb.core.find(idVendor=0x04D8, idProduct=0x0054, backend=backend)  # Dev Board
+    # dev = usb.core.find(idVendor=0x04D8, idProduct=0x0053, backend=backend)  # PCB
 
     if dev is None:
-        raise ValueError('Device not found')
+        raise ValueError("Device not found")
 
     dev.set_configuration()
     return dev
+
 
 def read_usb_data(dev):
     global last_ID
     # dev.write(0x01, b'\x81', 1000)
     try:
-        data = dev.read(0x81, 1536, timeout=10)
+        data = dev.read(0x81, DATA_LEN, timeout=10)
     except usb.core.USBError as e:
         if e.errno == 60:
-            #operation timed out
+            # operation timed out
             raise ValueError("Operation timed out")
         elif e.errno == 19:
             raise ValueError("Device not found")
@@ -43,11 +50,13 @@ def read_usb_data(dev):
     packet_ID = data[1]
 
     last_ID = packet_ID
+    # print(len(data))
 
     adc_data = np.zeros(ADC_SAMPLES)
     for i in range(0, ADC_SAMPLES):
-        adc_data[i] =  data[i * 2 + 2] + (data[i * 2 + 3] << 8)
-    return adc_data
+        adc_data[i] = data[i * 2 + 2] + (data[i * 2 + 3] << 8)
+    return adc_data, packet_ID
+
 
 class LivePlot(QMainWindow):
     def __init__(self, dev):
@@ -63,10 +72,10 @@ class LivePlot(QMainWindow):
 
         # Plot widget
         self.graphWidget = pg.PlotWidget()
-        self.plot = self.graphWidget.plot(pen=pg.mkPen(color='c', width=2))
+        self.plot = self.graphWidget.plot(pen=pg.mkPen(color="c", width=2))
         self.graphWidget.setTitle("ADC Data")
-        self.graphWidget.setLabel('left', 'ADC Value')
-        self.graphWidget.setLabel('bottom', 'Time (us)')
+        self.graphWidget.setLabel("left", "ADC Value")
+        self.graphWidget.setLabel("bottom", "Time (us)")
         layout.addWidget(self.graphWidget)
 
         # Pause button
@@ -74,11 +83,16 @@ class LivePlot(QMainWindow):
         self.pause_button.clicked.connect(self.toggle_pause)
         layout.addWidget(self.pause_button)
 
+        # Offset button
+        self.offset_button = QPushButton("Increment Offset")
+        self.offset_button.clicked.connect(self.inc_offset)
+        layout.addWidget(self.offset_button)
+
         main_widget.setLayout(layout)
         self.setCentralWidget(main_widget)
 
         # Data arrays
-        self.x = np.arange(0,ADC_SAMPLES*ADC_PERIOD, ADC_PERIOD)
+        self.x = np.arange(0, ADC_SAMPLES * ADC_PERIOD, ADC_PERIOD)
         self.y = np.zeros(ADC_SAMPLES)
 
         # Timer
@@ -91,24 +105,34 @@ class LivePlot(QMainWindow):
         self.paused = not self.paused
         self.pause_button.setText("Resume" if self.paused else "Pause")
 
+    def inc_offset(self):
+        global offset
+        offset += 1
+        if offset > (channels - 1):
+            offset = 0
+
     def update_plot_data(self):
         if self.paused:
             return
 
         try:
-            self.y = read_usb_data(self.dev)
+            self.y, count = read_usb_data(self.dev)
+            # global channels, offset
+            # if count != offset:
+            #     return
             self.plot.setData(self.x, self.y)
             self.timer.setInterval(1)  # Fast polling when working
+
         except ValueError as e:
             if str(e) == "Operation timed out":
-                print("Operation timed out, retrying...")
+                print("Oieration timed out, retrying...")
                 self.timer.setInterval(1000)
             elif str(e) == "Device not found":
                 print("Device not found, retrying...")
                 # Reinitialize the USB device
                 try:
                     self.dev = init_usb_device()
-                    self.timer.setInterval(1)  # Reset to fast polling
+                    self.timer.setInterval(1)  # Reset to fast iolling
                     print("Device reinitialized successfully.")
                 except ValueError as e:
                     print(f"Failed to reinitialize device: {e}")
@@ -119,7 +143,7 @@ class LivePlot(QMainWindow):
                 self.timer.setInterval(1000)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dev = init_usb_device()
     app = QApplication(sys.argv)
     window = LivePlot(dev)
